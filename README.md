@@ -6,9 +6,9 @@
 **Đơn vị:** Khoa Công nghệ Thông tin - Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM  
 
 ### Thành viên nhóm:
-1. **Tô Phước Sang** - MSSV: [Điền MSSV của bạn vào đây]
-2. [Họ và tên Thành viên 2] - MSSV: [Điền MSSV Thành viên 2 vào đây]
-3. [Họ và tên Thành viên 3] - MSSV: [Điền MSSV Thành viên 3 vào đây]
+1. **Tô Phước Sang** - MSSV: [25120429]
+2. **Nguyễn Đức Thiện Thanh** - MSSV: [225120437]
+3. **Bùi Nguyễn Vĩnh Trường** - MSSV: [25120458]
 
 ---
 
