@@ -5,7 +5,7 @@
 using namespace std;
 
 int main(int argc, char* argv[]) {
-    // Kiem tra xem nguoi dung co nhap du tham so khong
+    // Kiểm tra xem người dùng có nhập đủ tham số không
     if (argc != 3) {
         cerr << "Cu phap: ./test_gen <int/strlexi/strlenlexi> <1/2/3/4/5>\n";
         return 1;
