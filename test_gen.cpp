@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
             for (int i = 0; i < N; i++) cout << (i % 2 == 0 ? 2147483647 : -2147483648) << "\n";
         } else if (t == 2) { // Toàn số âm cực lớn
             for (int i = 0; i < N; i++) cout << -2147483000 - (rng() % 500) << "\n";
-        } else if (t == 3) { // Sắp xếp giảm dần (worst case cơ bản)
+        } else if (t == 3) { // Sắp xếp giảm dần 
             for (int i = 0; i < N; i++) cout << 2147483647 - i << "\n";
         } else { // Random nhưng số ký tự dài
             for (int i = 0; i < N; i++) {
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
                 int group_size = min(31, N - i);
                 // Tạo ngược chiều để insertion sort chậm nhất
                 for (int j = group_size - 1; j >= 0; --j) {
-                    string s(98, (t == 1) ? 'a' : 'z'); // 98 ký tự đầu giống hệt
+                    string s(98, (t == 1) ? 'a' : 'z'); //làm 98 ký tự đầu giống nhau
                     s += (char)('a' + (j / 26));
                     s += (char)('a' + (j % 26));
                     cout << s << "\n";
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
                 s += (char)('a' + (i % 26));
                 cout << s << "\n";
             }
-        } else { // Random cực dài để tốn RAM và Cache
+        } else { // Random dài để tốn RAM và Cache
             for (int i = 0; i < N; ++i) {
                 string s = "";
                 for(int j=0; j<Len; ++j) s += (char)('a' + rng() % 26);
@@ -87,7 +87,6 @@ int main(int argc, char* argv[]) {
         cout << N << "\n";
         
         if (t == 1 || t == 2) {
-            // Ép vào cùng 1 bucket độ dài (Len = 100)
             // Code C fallback ở n < 25, nên ta tạo nhóm 24 chuỗi ngược chiều
             for (int i = 0; i < N; i += 24) {
                 int group_size = min(24, N - i);
@@ -105,7 +104,7 @@ int main(int argc, char* argv[]) {
                 s += (char)('a' + (i % 26));
                 cout << s << "\n";
             }
-        } else { // Trùng lặp hoàn toàn (Dupes)
+        } else { // Trùng lặp hoàn toàn
             string base_str(100, 'k');
             for (int i = 0; i < N; ++i) cout << base_str << "\n";
         }
