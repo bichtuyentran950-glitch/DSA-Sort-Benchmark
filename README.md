@@ -90,8 +90,6 @@ Mã nguồn đối thủ sử dụng giải thuật MSD Radix Sort di chuyển t
 
 ## 3. Thuật toán cài đặt tốt nhất ở lần thứ hai (Benchmark 2)
 
-Do kiến trúc mã nguồn nộp bài đã được chốt và đóng lại, nhóm xem cấu hình hiện tại là giới hạn tối đa về khả năng triển khai thực tế. Tuy nhiên, thông qua quá trình phân tích phản hồi hệ thống ở giai đoạn Hacking Phase, nhóm đã đúc kết và đề xuất các phương án tối ưu nâng cấp về mặt lý thuyết để khắc phục hoàn toàn các điểm yếu cố hữu.
-
 > **Phân tích hạn chế hiện tại của mã nguồn nhóm:**
 > Mã nguồn hiện tại của nhóm ở Bài C tuy vượt trội đối thủ về tốc độ và tính chính xác của từ điển nhờ mảng chỉ số gián tiếp, nhưng bản chất vẫn là một hàm MSD Radix Sort thuần túy từ gốc (chưa tách biệt tầng xử lý độ dài chuỗi một cách tường minh). Nếu hệ thống kiểm thử sinh ra các chuỗi ngắn nhưng có thứ tự từ điển lớn xen kẽ chuỗi dài, thuật toán sẽ gặp lỗi phân tách vị trí biên.
 
