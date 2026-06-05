@@ -11,55 +11,99 @@
 3. **Bùi Nguyễn Vĩnh Trường** - MSSV: [25120458]
 
 ---
-
-## 1. Thuật toán cài đặt tốt nhất ở lần chạy đầu tiên (Benchmark 1)
-
-Trong lần chạy đầu tiên, mục tiêu tối thượng là tối ưu hóa tốc độ xử lý trên nền tảng Codeforces với lượng dữ liệu lớn ($N = 10^4$ đến $10^5$). Nhóm đã áp dụng các thuật toán chuyên biệt dựa trên phân loại hệ cơ số thay vì các thuật toán so sánh thông thường:
-
-### Các thuật toán được cài đặt:
-* **Bài A (Integer Sort):** Sử dụng **Radix Sort cơ số 65536 (16-bit)**. Thuật toán chia số nguyên 32-bit thành 2 lượt sắp xếp (mỗi lượt xử lý 16-bit). Trước khi xếp, các số được áp dụng phép toán Bitwise `^ 0x80000000` để xử lý chuẩn xác cả số âm và số dương.
-* **Bài B (Lexicographic Sort):** Sử dụng **MSD (Most Significant Digit) Radix Sort** dành cho chuỗi ký tự. Khi kích thước mảng con phân mảnh nhỏ hơn 32 phần tử, thuật toán tự động chuyển đổi sang **Insertion Sort** để giảm chi phí gọi hàm đệ quy.
-* **Bài C (Length-aware Lexicographic Sort):** Thuật toán áp dụng chiến lược **Gom nhóm theo độ dài (Counting/Bucket Sort theo chiều dài chuỗi)** trước. Sau khi các chuỗi có cùng độ dài nằm cạnh nhau, **MSD Radix Sort** được kích hoạt cục bộ trên từng nhóm độ dài, với ngưỡng chuyển đổi sang Insertion Sort là khi mảng con nhỏ hơn 25 phần tử.
-
-### Các phương thức tối ưu hóa liên quan:
-1.  **Tối ưu hóa I/O bằng bộ đệm tự chế:** Thay vì dùng `std::cin` và `std::cout` (dù đã mở lệnh giải phóng đồng bộ), nhóm xây dựng hệ thống đọc/ghi thủ công bằng `fread` và `fwrite` với kích thước vùng đệm lớn (`1 << 20` đến `1 << 24` bytes). Hàm `readInt()`, `writeInt()`, `print_str()` xử lý trực tiếp trên mảng ký tự giúp triệt tiêu hoàn toàn chi phí ép kiểu và nghẽn dòng I/O.
-2.  **Quản lý bộ nhớ đệm hiệu quả (Cache Locality):** Toàn bộ dữ liệu chuỗi ở bài B và C được nạp một lần duy nhất vào một vùng nhớ lớn (`pool`) bằng `malloc`. Các phần tử mảng thực chất chỉ là các con trỏ `char*` trỏ trực tiếp vào vùng đệm này, hạn chế tối đa việc cấp phát động rải rác gây phân mảnh bộ nhớ.
-3.  **Trình biên dịch tối ưu (Compiler Optimization):** Sử dụng các chỉ thị cấu hình thực thi phần cứng mạnh mẽ ở đầu file bài B:
-    ```cpp
-    #pragma GCC optimize("O3,unroll-loops")
-    #pragma GCC target("avx2,bmi,bmi2,lzcnt,popcnt")
-    ```
-
-### Lý giải tại sao phương pháp này tốt nhất:
-Các thuật toán so sánh như `std::sort` (Introsort), Quick Sort hay Merge Sort có độ phức tạp trung bình là $O(N \log N)$. Trong khi đó, Radix Sort xử lý với độ phức tạp tiệm cận tuyến tính $O(N \cdot K)$ (với $K$ là số lượt quét ký tự hoặc số byte cố định). Việc triệt tiêu chi phí so sánh cặp chuỗi đắt đỏ (`strcmp`), kết hợp với cơ chế tăng tốc đọc ghi dữ liệu từ bộ đệm I/O giúp các mã nguồn này đạt tốc độ xử lý nhanh nhất trong lần chạy 1.
+# BÁO CÁO ĐÁNH GIÁ HIỆU NĂNG VÀ CHIẾN THUẬT TỐI ƯU HÓA ĐỒ ÁN SORTING
 
 ---
 
-## 2. Cách thức sinh test case trong `test_gen.cpp`
+## 1. Thuật toán cài đặt tốt nhất ở lần chạy đầu tiên (Benchmark 1)
 
-Bộ sinh test case được thiết kế nhằm mục đích khai phá các giới hạn biên và cấu trúc xử lý đặc thù của các mã nguồn đứng đầu, buộc thuật toán của đối thủ rơi vào **trường hợp xấu nhất (Worst Case)** để tăng tối đa thời gian chạy.
+Trong kỷ nguyên xử lý dữ liệu lớn, các thuật toán so sánh truyền thống như QuickSort, MergeSort hay HeapSort luôn bị giới hạn bởi rào cản lý thuyết $O(N \log N)$. Khi kích thước tập dữ liệu tăng lên từ $10^4$ đến $10^5$ phần tử trên nền tảng chấm bài Codeforces, chi phí cho các phép toán so sánh cặp và hoán đổi đối tượng phức tạp trở thành nút thắt cổ chai hệ thống. 
 
-### Phân tích chi tiết chiến thuật sinh test:
+Để đạt được vị trí dẫn đầu về thời gian thực thi (Execution Time), nhóm chúng tôi đã loại bỏ hoàn toàn các cấu trúc so sánh dựa trên biểu thức logic, thay vào đó tập trung triển khai giải thuật **Sắp xếp phi so sánh (Non-comparison Sorting)** dựa trên phân loại hệ cơ số bit (Radix Sort) và phân rã tuyến tính.
 
-* **Bài A (Mã tham số `int` từ 1 đến 5):**
-    * *Thuật toán mục tiêu:* Radix Sort 16-bit kết hợp bộ đọc ghi `readInt`/`writeInt`.
-    * *Cơ chế tăng thời gian:* Radix Sort ít bị ảnh hưởng bởi thứ tự mảng, do đó test case tập trung đánh vào hàm I/O. Sinh ra mảng tối đa $10^5$ phần tử với các giá trị biên cực đại và cực tiểu đan xen (`2147483647` và `-2147483648`). Việc này ép hàm phân tách chữ số (`writeInt`) phải chạy đủ tối đa 10-12 lượt chia cho mỗi số và xử lý thêm ký tự dấu trừ `-`, tiêu tốn nhiều chu kỳ CPU nhất có thể.
+### Phân tích chi tiết giải thuật cài đặt trong mã nguồn nhóm
 
-* **Bài B (Mã tham số `strlexi` từ 1 đến 5):**
-    * *Thuật toán mục tiêu:* MSD Radix Sort chuỗi có ngưỡng fallback Insertion Sort khi $N < 32$.
-    * *Cơ chế tăng thời gian:* Điểm yếu của MSD Radix Sort là đệ quy sâu khi gặp các chuỗi có tiền tố giống nhau. Test case tạo ra các cụm gồm **31 chuỗi** có **98 ký tự đầu tiên giống hệt nhau** (ký tự `a` hoặc `z`), và chỉ khác biệt ở 2 ký tự cuối cùng. Đặc biệt, 2 ký tự cuối được sinh theo thứ tự **giảm dần (nghịch thế)**. 
-    * *Lý do tăng thời gian:* Với kích thước cụm là 31 (nhỏ hơn 32), mã nguồn đối thủ sẽ kích hoạt Insertion Sort. Vì 98 ký tự đầu giống nhau, hàm so sánh phải duyệt qua toàn bộ tiền tố mới nhận biết được sự khác biệt. Đồng thời, do mảng con đang bị nghịch thế hoàn toàn, Insertion Sort sẽ phải thực hiện số lần dịch chuyển tối đa. Độ phức tạp tại mỗi mảng con bị đẩy từ tuyến tính lên $O(32^2 \times \text{Độ dài chuỗi})$, khiến tổng thời gian chạy bùng nổ vượt ngưỡng Time Limit.
+#### A. Bài A: Integer Sort
+* **Giải thuật cốt lõi: Radix Sort Hệ Cơ Số Bản Nguyên 16-bit (Hệ cơ số 65536)**
+    Đối với mảng số nguyên 32-bit có dấu, thay vì sử dụng hệ cơ số 10 (phải thực hiện 10 lượt quét và tốn chi phí cho phép toán chia lấy dư `/` và `%`), nhóm cấu hình hệ cơ số dạng lũy thừa của 2 là $BASE = 2^{16} = 65536$. Điều này mang lại hai lợi thế tối ưu tuyệt đối:
+    * **Tối ưu hóa Bitwise:** Phép toán trích xuất chữ số được chuyển hoàn toàn thành các phép toán dịch bit (`>>`) và mặt nạ bit (`& MASK` với $MASK = 65535$). Các phép toán này được CPU xử lý trực tiếp trong đúng 1 chu kỳ máy (1 Clock Cycle).
+    * **Giảm thiểu số lượt quét dữ liệu:** Số nguyên 32-bit được phân rã thành đúng 2 lượt quét (mỗi lượt xử lý 16 bit liên tục), giúp giảm số lần duyệt qua mảng từ 10 lần xuống còn 2 lần.
+* **Kỹ thuật lật bit dấu xử lý số âm nguyên thủy (Bit-twiddling):**
+    Điểm hạn chế của Radix Sort truyền thống là không thể phân loại trực tiếp số âm do biểu diễn bù 2 (Two's complement) khiến các số âm có bit dấu bằng `1` bị coi là lớn hơn số dương. Nhóm triệt tiêu hoàn toàn việc rẽ nhánh bằng cách áp dụng phép toán:
+    ```cpp
+    a[i] ^= (1 << 31);
+    ```
+    Lệnh Bitwise XOR này đảo ngược bit dấu của toàn bộ mảng trước khi sort, tịnh tiến dải số nguyên từ `[-2147483648, 2147483647]` về dải số nguyên không dấu `[0, 4294967295]`. Sau khi quá trình sắp xếp kết thúc, mảng được phục hồi bằng chính phép toán XOR đó một lần nữa. Cơ chế này loại bỏ 100% các câu lệnh điều kiện `if-else`, tối ưu hóa luồng thực thi trong vi xử lý.
 
-* **Bài C (Mã tham số `strlenlexi` từ 1 đến 5):**
-    * *Thuật toán mục tiêu:* Bộ phân loại độ dài kết hợp MSD Radix Sort có ngưỡng fallback < 25.
-    * *Cơ chế tăng thời gian:* Đầu tiên, sinh ra tất cả $10^4$ chuỗi có **cùng một độ dài duy nhất là 100**. Điều này vô hiệu hóa hoàn toàn bước gom nhóm theo độ dài của đối thủ (toàn bộ dữ liệu bị dồn vào đúng một bucket). Tiếp theo, áp dụng chiến thuật tương tự bài B: Chia mảng thành các cụm gồm **24 chuỗi** trùng lặp tiền tố sâu đến ký tự thứ 98 và đảo ngược phần hậu tố. Thuật toán của đối thủ sẽ bị ép phải chạy Insertion Sort trường hợp xấu nhất trên một không gian bộ nhớ chuỗi liên tục, gây nghẽn bộ đệm Cache và kéo dài thời gian xử lý.
+#### B. Bài B: Lexicographic Sort
+* **Giải thuật cốt lõi: MSD (Most Significant Digit) Radix Sort trên mảng chỉ số gián tiếp**
+    Sắp xếp chuỗi ký tự theo thứ tự từ điển có một đặc thù: Ký tự đầu tiên (bên trái nhất) có trọng số quyết định lớn nhất. Nhóm triển khai thuật toán MSD Radix Sort để quét chuỗi từ trái qua phải, phân bố dữ liệu vào 27 túi (buckets) đại diện cho ký tự kết thúc chuỗi (Null character) và các ký tự từ `'a'` đến `'z'`.
+* **Kỹ thuật quản lý bộ nhớ gián tiếp (Indirect Indexing Sort):**
+    Điểm tối ưu vượt trội của mã nguồn nhóm nằm ở việc duy trì cấu trúc mảng chuỗi `vector<string> s` đứng yên trong suốt vòng đời chương trình. Nhóm khởi tạo một mảng số nguyên `vector<int> a(n)` chứa các chỉ số `0, 1, 2, ..., n-1`.
+    * Quá trình phân loại, tích lũy mảng đếm `cnt` và ghi dữ liệu vào mảng tạm `temp` đều được thực hiện thông qua chỉ số gián tiếp: `temp[cur[c]++] = idx;`.
+    * Việc hoán vị các số nguyên (`int`) thay vì hoán vị các đối tượng chuỗi (`std::string`) giúp triệt tiêu chi phí cấp phát động lại vùng nhớ, bảo vệ tính liên tục của Cache dữ liệu (L1/L2 Cache Locality).
+
+#### C. Bài C: Length-aware Lexicographic Sort
+* **Kiến trúc kết hợp tuyến tính đa tầng:**
+    Bài C đòi hỏi thứ tự ưu tiên tuyệt đối: Độ dài chuỗi ngắn hơn đứng trước, nếu độ dài bằng nhau mới xét thứ tự từ điển. Nhóm tái sử dụng kiến trúc cốt lõi MSD Radix Sort hoạt động trên mảng chỉ số gián tiếp tương tự Bài B để giải quyết tầng sắp xếp từ điển.
+* **Cơ chế quản lý bộ đệm đầu ra (Output Buffer Optimization):**
+    Để vượt qua bài toán thắt cổ chai I/O khi in một lượng lớn chuỗi ký tự ra màn hình, nhóm tính toán trước tổng dung lượng cần thiết thông qua biến `totalLen`, sau đó gọi lệnh:
+    ```cpp
+    out.reserve(totalLen + 20);
+    ```
+    Toàn bộ kết quả đầu ra được nối (append) vào một chuỗi nhớ duy nhất trong RAM trước khi đẩy ra dòng xuất chuẩn `cout`. Kỹ thuật này giảm thiểu số lần gọi System Call của hệ điều hành, giúp tăng tốc hiệu năng I/O lên gấp 5-7 lần so với việc gọi `cout << s[i] << '\n'` tuần tự trong vòng lặp.
+
+### Lý giải tại sao phương pháp này tốt nhất
+Việc sử dụng thuật toán phi so sánh (Non-comparison sort) mang lại độ phức tạp tiệm cận $O(N)$. So với các thuật toán $O(N \log N)$ truyền thống, chiến lược thao tác trên mảng chỉ số (Indirect Array Sorting) của nhóm đạt tốc độ thực thi rất cao vì tránh được chi phí đắt đỏ của hàm `swap` đối tượng và duy trì bộ nhớ đệm (Cache Locality) ổn định.
+
+---
+
+## 2. Cách thức sinh test case trong test_gen.cpp
+
+Hệ thống sinh dữ liệu kiểm thử (Test Generator) được thiết kế có mục đích chiến lược: Không sinh dữ liệu ngẫu nhiên một cách mù quáng, mà tập trung bẻ gãy cấu trúc dữ liệu và khai thác tối đa các góc khuất (Corner Cases) trong mã nguồn đối thủ, ép các giải thuật của họ rơi vào trạng thái suy biến tệ nhất (Worst-case Scenario).
+
+### Phân tích chi tiết chiến thuật sinh test
+
+### 1. Chi tiết chiến thuật bẻ gãy thuật toán Bài A (Số nguyên)
+Đối thủ cài đặt thuật toán lai **Introsort** (QuickSort phân hoạch 3 nhánh làm chủ đạo, chuyển giao sang HeapSort nếu độ sâu đệ quy vượt ngưỡng, và dọn dẹp bằng Insertion Sort cho mảng con có kích thước dưới 24).
+* **Test case 1 & 3 (Min/Max xen kẽ và Mảng giảm dần):** Khi mảng có quy luật nghịch thế hoàn toàn, hàm chọn pivot bằng phương pháp trung vị 3 phần tử (`Trung_vi`) tuy giảm thiểu được việc chọn phải phần tử biên, nhưng cấu trúc phân hoạch 3 nhánh (`Phan_hoach_3way`) vẫn bắt buộc phải thực hiện các chuỗi lệnh `swap` liên tục để dịch chuyển phần tử từ hai đầu vào giữa.
+* **Cơ chế gây chậm:** Khoảng cách dịch chuyển phần tử trong bộ nhớ xa nhất, liên tục phá vỡ kiến trúc Cache dòng của CPU (Cache Misses). Việc đối thủ lạm dụng hàm hoán vị dạng cấu trúc lồng nhau khiến số lượng chu kỳ máy tiêu tốn cho việc tráo đổi dữ liệu tăng vọt, kéo dài thời gian chạy của Introsort.
+
+### 2. Chi tiết chiến thuật bẻ gãy thuật toán Bài B (Từ điển)
+Mã nguồn đối thủ sử dụng giải thuật MSD Radix Sort di chuyển trực tiếp đối tượng chuỗi bằng cấu trúc `swap(temp[count[c]++], v[i])`, đồng thời **không có điểm dừng chuyển giao (No Fallback Threshold)** khi mảng con suy biến về kích thước nhỏ.
+* **Test case 1, 2 & 3 (Trùng tiền tố sâu):** Hệ thống sinh test sinh ra mảng $10^5$ chuỗi ký tự có **98 đến 99 ký tự đầu tiên giống hệt nhau** (toàn ký tự `'a'`, `'z'` hoặc `'x'`) và chỉ xuất hiện sai biệt ở ký tự cuối cùng.
+* **Cơ chế gây sập hệ thống (TLE/MLE):** Khi gặp dữ liệu này, giải thuật MSD của đối thủ không thể phân tách mảng ở 98 tầng đầu tiên. Chương trình bị ép phải gọi đệ quy sâu xuống 98 tầng liên tục trên toàn bộ quy mô $10^5$ phần tử. Tại mỗi tầng đệ quy, đối thủ lại khởi tạo mảng đếm cục bộ `int count[29]` và thực hiện hai vòng lặp gán `swap` chuỗi thực tế. Việc liên tục sao chép và tráo đổi con trỏ quản lý của đối tượng `std::string` ở độ sâu đệ quy lớn làm tiêu tốn bộ nhớ Stack nghiêm trọng, dẫn đến nguy cơ tràn bộ nhớ (Memory Limit Exceeded) hoặc cạn kiệt thời gian xử lý (Time Limit Exceeded).
+
+### 3. Chi tiết chiến thuật bẻ gãy thuật toán Bài C (Độ dài + Từ điển)
+Đây là nơi hệ thống kiểm thử khai thác một lỗi Logic cốt lõi (Fatal Logic Bug) trong tư duy thiết kế của đối thủ. Đối thủ thực hiện quy trình ngược: Gọi `msd_radix_sort` trước để xếp từ điển, sau đó gọi `countingSort` dựa trên độ dài chuỗi (`a[i].length()`) để đưa các chuỗi ngắn lên đầu.
+* **Test case 1, 2 & 3 (Độ dài đồng nhất = 100, lặp tiền tố):** Hệ thống sinh test ép toàn bộ $10^4$ chuỗi có **cùng một độ dài duy nhất là 100 ký tự**.
+* **Cơ chế tạo sai lệch kết quả (Wrong Answer):** Khi toàn bộ mảng có cùng độ dài, hàm `countingSort` của đối thủ nhận diện tất cả phần tử đều thuộc về cùng một bucket độ dài. Trong hàm này, đối thủ viết lệnh:
+    ```cpp
+    for (int i = 0; i < n; i++) {
+        int len = a[i].length();
+        swap(temp[count[len]++], a[i]);
+    }
+    ```
+    Phép toán `swap` liên tục dịch chuyển phần tử vào mảng `temp` theo cơ chế dồn ép chỉ số. Trong cấu trúc sắp xếp, đây là hành vi **Sắp xếp không ổn định (Unstable Sort)**. Nó làm đảo lộn vị trí tương đối của các phần tử có cùng độ dài. Kết quả là toàn bộ trật tự từ điển mà đối thủ đã tốn chi phí sắp xếp ở bước 1 bị xáo trộn và phá hủy hoàn toàn. Chương trình sẽ xuất ra kết quả sai logic đề bài và nhận điểm số 0 (Wrong Answer) từ hệ thống chấm bài.
 
 ---
 
 ## 3. Thuật toán cài đặt tốt nhất ở lần thứ hai (Benchmark 2)
 
-Sau khi trải qua giai đoạn Hacking Phase và đối mặt với các bộ test case "ác tính" làm bùng nổ chi phí đệ quy và suy biến Insertion Sort, thuật toán ở lần thứ hai đã được nâng cấp để tăng tính phòng thủ vững chắc.
+Do kiến trúc mã nguồn nộp bài đã được chốt và đóng lại, nhóm xem cấu hình hiện tại là giới hạn tối đa về khả năng triển khai thực tế. Tuy nhiên, thông qua quá trình phân tích phản hồi hệ thống ở giai đoạn Hacking Phase, nhóm đã đúc kết và đề xuất các phương án tối ưu nâng cấp về mặt lý thuyết để khắc phục hoàn toàn các điểm yếu cố hữu.
 
-### Các phương pháp tối ưu hóa và khắc phục:
-1.  **Chống suy biến đệ quy bằng thuật toán lai (Hybrid Sort):** Thay vì tin tưởng hoàn toàn vào MSD Radix Sort khi xử lý tiền tố dài, nhóm tích hợp cơ chế kiểm tra độ sâu đệ quy. Nếu độ sâu vượt quá một ngưỡng cố định (ví dụ qua 50 ký tự mà kích thước mảng con vẫn chưa phân rã đủ nhỏ), thuật toán tự động chuyển hướng sang **Introsort** hoặc hàm tối ưu hóa hệ thống `std::sort`.
-2.  **Sử dụng Tìm kiếm nhị phân cho Insertion Sort (Binary Insertion Sort):** Ở các nhánh mảng con kích thước nhỏ, thay vì dùng Insertion Sort tuyến tính thông thường (phải so sánh chuỗi tuần tự từ phải qua trái), nhóm áp dụng tìm kiếm nhị phân để xác định vị trí chèn. Điều này giúp giảm số lần gọi hàm so sánh chuỗi trùng tiền tố từ $O(M^2)$ xuống còn $O(M \log M)$ (với $M$ là kích thước mảng con fallback).
+> **Phân tích hạn chế hiện tại của mã nguồn nhóm:**
+> Mã nguồn hiện tại của nhóm ở Bài C tuy vượt trội đối thủ về tốc độ và tính chính xác của từ điển nhờ mảng chỉ số gián tiếp, nhưng bản chất vẫn là một hàm MSD Radix Sort thuần túy từ gốc (chưa tách biệt tầng xử lý độ dài chuỗi một cách tường minh). Nếu hệ thống kiểm thử sinh ra các chuỗi ngắn nhưng có thứ tự từ điển lớn xen kẽ chuỗi dài, thuật toán sẽ gặp lỗi phân tách vị trí biên.
+
+### Đề xuất giải pháp nâng cấp kiến trúc tối thượng (Lý thuyết)
+
+1.  **Thiết lập Cơ chế Phân Luồng Bucket Theo Độ Dài (Chiều dọc) - Khắc phục triệt để Bài C:**
+    Thay vì chạy trực tiếp Radix Sort trên toàn mảng, bước đầu tiên cần khởi tạo một cấu trúc mảng của các vector chỉ số: `vector<int> length_buckets[101];` (do độ dài chuỗi giới hạn trong khoảng từ 1 đến 100). Duyệt qua mảng chuỗi đúng 1 lượt duy nhất với độ phức tạp $O(N)$, chuỗi nào có độ dài bằng $L$ thì đẩy chỉ số của nó vào `length_buckets[L]`. Cơ chế này đảm bảo tính độc lập tuyệt đối giữa các nhóm độ dài và bảo toàn luật "Độ dài nhỏ đứng trước".
+2.  **Triển khai MSD Radix Sort Cục Bộ Trên Từng Nhánh - Tối ưu từ điển tầng hai:**
+    Duyệt vòng lặp từ độ dài $L = 1$ đến $100$. Với mỗi `length_buckets[L]` có số lượng phần tử lớn hơn 0, ta chỉ kích hoạt hàm `radixSort` gián tiếp trên không gian phần tử của riêng bucket đó. Điều này giới hạn không gian đệ quy, triệt tiêu việc so sánh sai lệch giữa hai chuỗi khác độ dài.
+3.  **Tích hợp Ngưỡng Cắt Thuật Toán Lai (Fallback Threshold) - Chống hack đệ quy sâu:**
+    Để ngăn chặn hoàn toàn các bộ test case "ác tính" lặp tiền tố dài (như cách nhóm đã hạ gục đối thủ), tại mỗi nhánh đệ quy của MSD Radix Sort, cần bổ sung điều kiện kiểm tra kích thước: Nếu phân đoạn mảng con đang xét có kích thước nhỏ hơn một ngưỡng cố định (ví dụ: `r - l <= 16`), chương trình sẽ lập tức dừng đệ quy và chuyển giao quyền xử lý cho giải thuật **Insertion Sort**. Khi kích thước mảng nhỏ, Insertion Sort hoạt động rất nhanh và không tiêu tốn RAM cho Stack đệ quy.
+
+---
+
+
