@@ -38,13 +38,6 @@ Trong giai đoạn đầu của dự án, mục tiêu hàng đầu của nhóm l
 
 
 
-
-## 2. Cách thức sinh test case trong test_gen.cpp
-
-Hệ thống sinh dữ liệu kiểm thử (Test Generator) được thiết kế có mục đích chiến lược: Không sinh dữ liệu ngẫu nhiên một cách mù quáng, mà tập trung bẻ gãy cấu trúc dữ liệu và khai thác tối đa các góc khuất (Corner Cases) trong mã nguồn đối thủ, ép các giải thuật của họ rơi vào trạng thái suy biến tệ nhất (Worst-case Scenario).
-
-### Phân tích chi tiết chiến thuật sinh test
-
 ## 2. Cách thức sinh test case trong test_gen.cpp
 
 Hệ thống sinh dữ liệu kiểm thử (`test_gen.cpp`) được thiết kế dựa trên một chiến lược tấn công có chủ đích: Chủ động phân tích kiến trúc mã nguồn của đối thủ để tìm ra các góc khuất thuật toán, từ đó sinh dữ liệu "ác tính" nhằm ép các giải thuật lai và các tầng đệ quy của họ rơi vào trạng thái suy biến tệ nhất (Worst-case Scenario).
@@ -99,7 +92,7 @@ Mặc dù bộ khung giải thuật Quick Sort ở vòng Benchmark 1 mang lại 
 * **Chi chi phí hoán đổi đối tượng chuỗi nặng nề:**
   Trong Bài B và Bài C, việc sử dụng hàm `swap(a[i], a[j])` trực tiếp trên các mảng đối tượng `std::string` tạo ra gánh nặng rất lớn cho CPU. Mỗi phép hoán đổi bắt buộc phải thực hiện các chuỗi thao tác sao chép con trỏ vùng nhớ động trên Heap. Khi dữ liệu lớn và số lần hoán đổi tăng lên, chi phí quản lý vùng nhớ này sẽ lấn át hoàn toàn thời gian tính toán của thuật toán.
 
-**💡 Giải pháp chuyển dịch:** Chính vì những giới hạn vật lý và hiểm họa suy biến hiệu năng của thuật toán dựa trên phép so sánh nêu trên, nhóm đã quyết định hướng đến một tư duy tiếp cận tối ưu hoàn toàn mới ở các giai đoạn sau: Thay thế Quick Sort bằng **Radix Sort** – giải thuật phi so sánh với độ phức tạp tuyến tính $O(N)$ để thiết lập hàng phòng thủ vững chắc trước mọi bộ test case ác tính.
+** Giải pháp chuyển dịch:** Chính vì những giới hạn vật lý và hiểm họa suy biến hiệu năng của thuật toán dựa trên phép so sánh nêu trên, nhóm đã quyết định hướng đến một tư duy tiếp cận tối ưu hoàn toàn mới ở các giai đoạn sau: Thay thế Quick Sort bằng **Radix Sort** – giải thuật phi so sánh với độ phức tạp tuyến tính $O(N)$ để thiết lập hàng phòng thủ vững chắc trước mọi bộ test case ác tính.
 #### A. Bài A: Integer Sort
 * **Giải thuật cốt lõi: Radix Sort Hệ Cơ Số Bản Nguyên 16-bit (Hệ cơ số 65536)**
     Đối với mảng số nguyên 32-bit có dấu, thay vì sử dụng hệ cơ số 10 (phải thực hiện 10 lượt quét và tốn chi phí cho phép toán chia lấy dư `/` và `%`), nhóm cấu hình hệ cơ số dạng lũy thừa của 2 là $BASE = 2^{16} = 65536$. Điều này mang lại hai lợi thế tối ưu tuyệt đối:
