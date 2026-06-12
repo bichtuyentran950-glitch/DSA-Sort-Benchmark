@@ -125,8 +125,8 @@ Mặc dù bộ khung giải thuật Quick Sort ở vòng Benchmark 1 mang lại 
 
 ## 4. Kết luận
 
-Thông qua đồ án Benchmark 1 & 2, nhóm chúng em đã chứng minh được sức mạnh của việc kết hợp giữa cấu trúc dữ liệu tối ưu (**Radix Sort**) và các kỹ thuật lập trình tinh chỉnh hệ thống chuyên sâu (**Bitwise**, **Indirect Array**, **Output Buffer**). 
+Thông qua đồ án Benchmark 1 & 2, nhóm chúng em đã chứng minh được sức mạnh của việc linh hoạt chuyển đổi giải thuật bám sát đặc thù dữ liệu — từ tốc độ tuyến tính của thuật toán phi so sánh (**Radix Sort**) cho đến sự an toàn tuyệt đối của giải thuật lai (**Merge Sort kết hợp Insertion Sort**). Hơn thế nữa, bước nhảy vọt về hiệu năng thực sự đến từ việc nhóm đã áp dụng thành công các kỹ thuật tinh chỉnh hệ thống cấp thấp: **Bitwise**, **Indirect Indexing** (Mảng chỉ số gián tiếp), **Pre-calculated Array** (Tiền tính toán dữ liệu) và **Output Buffer** (Quản lý vùng đệm I/O). 
 
-Mặc dù vẫn còn những điểm có thể cải tiến và tối ưu hơn nữa về mặt lý thuyết chống suy biến đệ quy chuỗi, nhóm tự hào rằng hệ thống hiện tại đã hoạt động với một hiệu suất thực thi cực kỳ cao, ổn định và đáp ứng tốt các áp lực dữ liệu lớn trên nền tảng kiểm thử.
+Mặc dù hành trình tối ưu hóa mã nguồn là vô tận và vẫn còn không gian để cải tiến sâu hơn (như tối ưu hoàn toàn các nhánh đệ quy sâu ở mảng chuỗi), nhóm tự hào rằng hệ thống hiện tại đã khắc phục triệt để những lỗ hổng chí mạng ban đầu. Mã nguồn mới không chỉ thiết lập hàng phòng thủ vững chắc trước mọi bộ test case "ác tính", mà còn hoạt động với hiệu suất thực thi cực kỳ cao, ổn định và đáp ứng hoàn hảo áp lực thời gian (Time Limit) khắt khe trên hệ thống kiểm thử.
 
 
