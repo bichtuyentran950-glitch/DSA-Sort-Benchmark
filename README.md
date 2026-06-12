@@ -122,10 +122,7 @@ Mặc dù bộ khung giải thuật Quick Sort ở vòng Benchmark 1 mang lại 
   ```cpp
   out.reserve(totalLen + 20);
 
-### Lý giải tại sao phương pháp này tốt nhất
-Việc sử dụng thuật toán phi so sánh (Non-comparison sort) mang lại độ phức tạp tiệm cận $O(N)$. So với các thuật toán $O(N \log N)$ truyền thống, chiến lược thao tác trên mảng chỉ số (Indirect Array Sorting) của nhóm đạt tốc độ thực thi rất cao vì tránh được chi phí đắt đỏ của hàm `swap` đối tượng và duy trì bộ nhớ đệm (Cache Locality) ổn định.
 
----
 ## 4. Kết luận
 
 Thông qua đồ án Benchmark 1 & 2, nhóm chúng em đã chứng minh được sức mạnh của việc kết hợp giữa cấu trúc dữ liệu tối ưu (**Radix Sort**) và các kỹ thuật lập trình tinh chỉnh hệ thống chuyên sâu (**Bitwise**, **Indirect Array**, **Output Buffer**). 
