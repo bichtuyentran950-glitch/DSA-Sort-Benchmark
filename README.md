@@ -114,14 +114,13 @@ Mặc dù bộ khung giải thuật Quick Sort ở vòng Benchmark 1 mang lại 
     * Việc hoán vị các số nguyên (`int`) thay vì hoán vị các đối tượng chuỗi (`std::string`) giúp triệt tiêu chi phí cấp phát động lại vùng nhớ, bảo vệ tính liên tục của Cache dữ liệu (L1/L2 Cache Locality).
 
 #### C. Bài C: Length-aware Lexicographic Sort
-* **Kiến trúc kết hợp tuyến tính đa tầng:**
-    Bài C đòi hỏi thứ tự ưu tiên tuyệt đối: Độ dài chuỗi ngắn hơn đứng trước, nếu độ dài bằng nhau mới xét thứ tự từ điển. Nhóm tái sử dụng kiến trúc cốt lõi MSD Radix Sort hoạt động trên mảng chỉ số gián tiếp tương tự Bài B để giải quyết tầng sắp xếp từ điển.
-* **Cơ chế quản lý bộ đệm đầu ra (Output Buffer Optimization):**
-    Để vượt qua bài toán thắt cổ chai I/O khi in một lượng lớn chuỗi ký tự ra màn hình, nhóm tính toán trước tổng dung lượng cần thiết thông qua biến `totalLen`, sau đó gọi lệnh:
-    ```cpp
-    out.reserve(totalLen + 20);
-    ```
-    Toàn bộ kết quả đầu ra được nối (append) vào một chuỗi nhớ duy nhất trong RAM trước khi đẩy ra dòng xuất chuẩn `cout`. Kỹ thuật này giảm thiểu số lần gọi System Call của hệ điều hành, giúp tăng tốc hiệu năng I/O lên gấp 5-7 lần so với việc gọi `cout << s[i] << '\n'` tuần tự trong vòng lặp.
+
+* **Giải thuật lai Merge Sort - Insertion Sort trên mảng chỉ số gián tiếp:** Bài C yêu cầu hai tiêu chí phân loại ưu tiên (độ dài trước, từ điển sau). Nhóm đã từ bỏ Quick Sort ban đầu và chuyển sang sử dụng thuật toán **Merge Sort**. Đặc thù của Merge Sort là luôn đảm bảo độ phức tạp thời gian ở mức $O(N \log N)$ trong mọi trường hợp xấu nhất, loại bỏ hoàn toàn rủi ro suy biến của Quick Sort. 
+  Bên cạnh đó, nhóm thiết lập một ngưỡng cắt đệ quy (Fallback Threshold): Khi mảng con bị chia nhỏ xuống kích thước $\le 32$, giải thuật tự động chuyển giao sang **Insertion Sort** để dọn dẹp, giúp triệt tiêu chi phí gọi hàm đệ quy (Overhead). Toàn bộ quá trình sắp xếp thao tác trên mảng chỉ số gián tiếp `a`, không thực hiện bất kỳ lệnh hoán đổi nào trên đối tượng chuỗi `std::string` thực tế.
+* **Kỹ thuật tiền tính toán (Pre-calculated Length Array):** Thay vì phải gọi phương thức đo chiều dài `s[i].size()` hàng triệu lần trong các vòng lặp cấu trúc của hàm so sánh `cmp`, nhóm đã trích xuất và lưu trước toàn bộ độ dài chuỗi vào một mảng số nguyên riêng biệt `vector<int> lenArr` ngay từ lúc nhập liệu. Việc này giúp bộ lọc hai tầng (độ dài $\rightarrow$ từ điển) hoạt động dựa trên các phép truy xuất mảng $O(1)$, tối ưu hóa tốc độ tính toán của CPU lên mức cao nhất.
+* **Cơ chế quản lý bộ đệm đầu ra (Output Buffer Optimization):** Để vượt qua bài toán thắt cổ chai I/O khi in một lượng lớn chuỗi ký tự ra màn hình, nhóm tính toán trước tổng dung lượng cần thiết thông qua biến `totalLen`, sau đó gọi lệnh:
+  ```cpp
+  out.reserve(totalLen + 20);
 
 ### Lý giải tại sao phương pháp này tốt nhất
 Việc sử dụng thuật toán phi so sánh (Non-comparison sort) mang lại độ phức tạp tiệm cận $O(N)$. So với các thuật toán $O(N \log N)$ truyền thống, chiến lược thao tác trên mảng chỉ số (Indirect Array Sorting) của nhóm đạt tốc độ thực thi rất cao vì tránh được chi phí đắt đỏ của hàm `swap` đối tượng và duy trì bộ nhớ đệm (Cache Locality) ổn định.
